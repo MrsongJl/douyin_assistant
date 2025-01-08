@@ -67,4 +67,4 @@ pip install -r requirements.txt
 * https://github.com/pixiv/three-vrm
 
 ## 如果对你有帮助，请我喝个咖啡吧
-
+![二维码](https://raw.githubusercontent.com/MrsongJl/douyin_assistant/main/assets/imgs/250cd36005b82dbfbb1974957e7733a.jpg)
