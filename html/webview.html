@@ -1,0 +1,938 @@
+<html>
+<!--
+@pixiv/three-vrm 文档
+https://pixiv.github.io/three-vrm/packages/three-vrm/docs/
+-->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="expires" content="0">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <title>互动虚拟人</title>
+    <!--   外部引用 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!--    <script src="https://unpkg.com/@pixiv/three-vrm@0.6.0/dist/three-vrm.umd.js"></script>-->
+    <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/BVHLoader.js"></script>
+    <!--    <script src="https://unpkg.com/@pixiv/three-vrm-animation/dist/three-vrm-animation.umd.js"></script>-->
+</head>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<style>
+    html, body {
+        width: 100%;
+        height: 99%;
+        padding: 0;
+        margin: 0;
+    }
+
+    body {
+        background-color: transparent !important;
+        margin: 0;
+        overflow: hidden;
+    }
+
+    canvas {
+        display: block;
+    }
+
+    /*#canvas {*/
+    /*    position: absolute;*/
+    /*    width: 100%;*/
+    /*    height: 99%;*/
+    /*    padding: 0;*/
+    /*    margin: 0;*/
+    /*}*/
+
+    /* 设置浮层样式 */
+    .float-layer {
+        display: none; /* 默认不显示 */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .float-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+    }
+</style>
+
+<body id="canvas" class="">
+
+<!-- 浮层内容 -->
+<div id="floatLayer" class="float-layer">
+    <div class="float-content">
+        <p>因浏览器自动播放限制 需点击“开始对话”后使用</p>
+        <button type="button" id="playButton" onclick="start()">开始对话</button>
+    </div>
+</div>
+<noscript>
+    <strong>很抱歉，没有 JavaScript 无法正常工作。请启用它以继续。</strong>
+</noscript>
+
+<!--<div id="canvas"></div>-->
+<audio id="audioPlayer" controls style="position: fixed;right: 0px;display: none;"></audio>
+
+</body>
+<!--<script type="module" src="../assets/js/vrm_render.js"></script>-->
+
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+      "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js",
+      "@pixiv/three-vrm-animation": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm-animation",
+      "three/controls/OrbitControls": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/controls/OrbitControls.js"
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+    import {VRMLoaderPlugin, VRMUtils} from '@pixiv/three-vrm';
+    import {
+        createVRMAnimationClip,
+        VRMAnimationLoaderPlugin,
+        VRMLookAtQuaternionProxy
+    } from '@pixiv/three-vrm-animation';
+
+    import {OrbitControls} from 'three/controls/OrbitControls';
+
+    (async () => {
+            //定义变量
+            let currentVrm = undefined;
+            let currentMixer = undefined; //播放动画
+            let blinkMixer = undefined; //眨眼动画
+            const canvas = document.getElementById('canvas')
+
+            // 场景
+            const scene = new THREE.Scene();
+
+            //摄像头 初始位置
+            const camera = new THREE.PerspectiveCamera(
+                50, canvas.clientWidth / canvas.clientHeight, 0.1, 1000)
+            camera.position.set(0, 1, 1)
+            camera.lookAt(new THREE.Vector3(0, 1, 0)); // 摄像头位置
+
+
+            // 渲染器设置 antialias: true 抗锯齿
+            const renderer = new THREE.WebGLRenderer({antialias: true, powerPreference: "low-power"});
+            // renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setPixelRatio(window.devicePixelRatio * 1); // 降低分辨率 0.5
+            //renderer.shadowMap.enabled = false; // 禁用阴影
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight)
+            // renderer.setClearColor(0x7fbfff, 1.0);
+            renderer.setClearColor("0x000000", 0);
+            document.body.appendChild(renderer.domElement);
+
+            // 灯光
+            const directionalLight = new THREE.DirectionalLight(0xff_ff_ff, Math.PI);
+            directionalLight.position.set(1, 1, 1).normalize();
+            //const directionalLight = new THREE.DirectionalLight(0x808080, 2.5); // 降低亮度 灰色光 亮度1
+            //directionalLight.position.set(1, 2, -1).normalize(); //
+            scene.add(directionalLight);
+
+            // const ambientLight = new THREE.AmbientLight(0x404040); // 添加环境光
+            // scene.add(ambientLight);
+
+            //GLTF 加载模型
+            const loader = new GLTFLoader();
+            loader.crossOrigin = 'anonymous';
+            // 注意 此处要注册两个 1个显示模型基本数据 1个显示动作动画数据
+            loader.register((parser) => {
+                return new VRMLoaderPlugin(parser);
+            });
+            loader.register((parser) => {
+                return new VRMAnimationLoaderPlugin(parser);
+            });
+
+
+            // 加载模型
+            const gltfVrm = await loader.loadAsync('/assets/models/少女2.vrm');
+            const vrm = gltfVrm.userData.vrm;
+
+            // 重置模型的位置、旋转和缩放
+            // vrm.scene.position.set(0, 0, 0); // 将模型的位置设置为原点  默认0.0.0
+            // vrm.scene.rotation.set(0, 0, 0); // 将模型的旋转重置为默认
+            VRMUtils.rotateVRM0(vrm); // 如果是 VRM 1.0 模型
+
+            // 计算模型的边界框
+            const box = new THREE.Box3().setFromObject(vrm.scene);
+            const size = new THREE.Vector3();
+            box.getSize(size); // 获取模型的尺寸
+
+            // 根据模型高度调整相机位置
+            // 获取模型高度
+            const modelHeight = size.y;
+
+            // 相机位置设置
+            // y: 将高度设为模型高度的0.5,使视角集中在上半身
+            // z: 减小z值来拉近镜头
+            camera.position.set(
+                0.1,
+                modelHeight * 0.8,  // 降低相机高度到模型中上部
+                modelHeight * 0.8   // 减小距离以放大显示
+            );
+
+            // 相机焦点
+            // y: 将焦点抬高到胸部位置(约为总高度的0.7)
+            camera.lookAt(
+                0,
+                modelHeight * 0.7,  // 将焦点对准上半身部分
+                0
+            );
+
+            //优化性能
+            // VRMUtils.removeUnnecessaryVertices(vrm.scene);
+            // VRMUtils.removeUnnecessaryJoints(vrm.scene);
+
+            // 禁用视椎体 强制渲染场景中的每一个对象
+            // vrm.scene.traverse((obj) => {
+            //     obj.frustumCulled = false;
+            // });
+
+            // 如果你想增加lookat  必须新增到vrm场景中
+            const lookAtQuatProxy = new VRMLookAtQuaternionProxy(vrm.lookAt);
+            lookAtQuatProxy.name = 'lookAtQuaternionProxy';
+            vrm.scene.add(lookAtQuatProxy);
+
+            //模型放到场景中
+            console.log(vrm);
+
+            scene.add(vrm.scene);
+
+            // 加载待机动画
+            const gltfVrma = await loader.loadAsync('/assets/models/待机动作.vrma');
+            const vrmAnimation = gltfVrma.userData.vrmAnimations[0]; //动画绑在0的位置
+
+            //...
+
+            // 优化版本 增加眨眼动作
+            const clip = createVRMAnimationClip(vrmAnimation, vrm); //剪辑
+
+            // 获取剪辑的轨道
+            const originalTracks = clip.tracks;
+            const mergedTracks = [...originalTracks];
+
+            // 创建一个动画混合器
+            const mergedClip = new THREE.AnimationClip('MergedAnimation', -1, mergedTracks);
+
+            //创建一个动画混合器-主
+            const mixer = new THREE.AnimationMixer(vrm.scene);
+
+            const action = mixer.clipAction(mergedClip);
+            action.setEffectiveTimeScale(1.0);
+            action.setLoop(THREE.LoopRepeat);
+            action.play();
+
+            // 记录默认的头部位置和表情状态
+            const originalHeadQuaternion = vrm.humanoid?.getNormalizedBoneNode("head").quaternion.clone();  // 深拷贝头部姿势
+            console.log(vrm.humanoid?.getNormalizedBoneNode("head").quaternion);
+            const originalExpressions = vrm.expressionManager.clone()
+            console.log("记录的原始表情数据:", originalExpressions);
+
+            // 播放一个新动画
+            async function playVRMAAnimation(vrm, vrmaUrl, timeScale = 1.0) {
+                //重要 如果在播放一个动画时用户尝试播放另一个动画，可能会导致混合器状态混乱，或者两个动画同时作用于 VRM 模型，从而导致模型行为异常。
+                if (currentMixer) {
+                    currentMixer.stopAllAction(); // 停止当前混合器的所有动作
+                    currentMixer.uncacheRoot(vrm.scene); // 清理当前混合器中的模型
+                    currentMixer = null; // 重置当前混合器
+                }
+
+                const oh_value = vrm.expressionManager.getValue("oh")//嘴巴呈圆形张开
+                console.log(oh_value)
+
+                // 加载VRMA文件
+                const gltfVrma = await loader.loadAsync(vrmaUrl);
+                const vrmAnimation = gltfVrma.userData.vrmAnimations[0];
+
+                // 创建动画剪辑
+                const clip = createVRMAnimationClip(vrmAnimation, vrm);
+
+                // 如果需要调整胳膊动画，取消下面这行的注释
+                // adjustAnimationClip(clip);
+
+                // 创建动画混合器并播放动画
+                const anm_mixer = new THREE.AnimationMixer(vrm.scene);
+                const action = anm_mixer.clipAction(clip);
+
+                // 设置动画只播放一次
+                action.setLoop(THREE.LoopOnce);
+                action.clampWhenFinished = true;
+
+                action.setEffectiveTimeScale(timeScale);
+
+                // 监听动画完成事件
+                anm_mixer.removeEventListener('finished');//移除其他监听
+                anm_mixer.addEventListener('finished', () => {
+                    console.log("播放结束")
+                    // 姿势不对时处理
+                    console.log(vrm.humanoid?.getNormalizedBoneNode("head").quaternion);
+                    // 如果只希望恢复头部的姿势
+                    // 获取头部骨骼节点
+                    const headBone = vrm.humanoid?.getNormalizedBoneNode("head");
+                    if (headBone && originalHeadQuaternion) {
+                        // 恢复头部的四元数姿势
+                        headBone.quaternion.copy(originalHeadQuaternion);  // 将拷贝的四元数重新赋值给头部
+                        console.log("恢复四元数:", headBone.quaternion);
+                    } else {
+                        console.warn("未能找到头部骨骼或原始姿势。");
+                    }
+
+                    const new_oh_value = vrm.expressionManager.getValue("oh")//嘴巴呈圆形张开
+                    if (new_oh_value != oh_value) {
+                        console.log("检测到嘴型变化" + new_oh_value)
+                    }
+                    // 还原表情状态
+                    vrm.expressionManager.copy(originalExpressions);
+                    console.log("表情已还原:", originalExpressions);
+                    // 停止并禁用动画混合器
+                    //anm_mixer.stopAllAction();  // 停止所有动画
+
+                    anm_mixer.uncacheRoot(vrm.scene);  // 从混合器中移除模型
+                    anm_mixer.uncacheAction(action);
+                    //还原位置 及播放原来动画
+                    currentMixer = null
+
+                });
+
+                action.play();
+
+                // 返回anm_mixer，以便在外部更新动画
+                currentMixer = anm_mixer
+
+                //return anm_mixer;
+
+            }
+
+            // 口型匹配
+            let audioContext;
+            let analyser;
+            let source;
+
+            // 初始化音频上下文和分析器
+            function initAudioContext() {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 1024; // 增加FFT大小以获得更高的频率分辨率
+                }
+            }
+
+            async function simulateSpeechFromAudio(expressionManager, audioUrl) {
+                initAudioContext();
+                try {
+                    // 获取音频数据
+                    const response = await fetch(audioUrl);
+                    const arrayBuffer = await response.arrayBuffer();
+
+                    // 解码音频数据
+                    const audioBuffer = await new Promise((resolve, reject) => {
+                        audioContext.decodeAudioData(arrayBuffer, resolve, reject);
+                    });
+
+                    // 创建音频源
+                    source = audioContext.createBufferSource();
+                    source.buffer = audioBuffer;
+
+                    // 连接到分析器和扬声器
+                    source.connect(analyser);
+                    analyser.connect(audioContext.destination);
+
+                    // 播放音频
+                    source.start();
+
+
+                    // 实时分析音频数据并更新口型
+                    const bufferLength = analyser.frequencyBinCount;
+                    const dataArray = new Uint8Array(bufferLength);
+
+
+                    // 人类语音主要在 300Hz-3000Hz 之间
+                    const speechFrequencyStart = Math.floor(300 * bufferLength / audioContext.sampleRate);
+                    const speechFrequencyEnd = Math.floor(3000 * bufferLength / audioContext.sampleRate);
+
+                    function animate() {
+                        analyser.getByteFrequencyData(dataArray);
+
+                        // 只计算语音频段的平均音量
+                        const speechBandData = dataArray.slice(speechFrequencyStart, speechFrequencyEnd);
+                        const speechVolume = speechBandData.reduce((sum, value) => sum + value, 0) / speechBandData.length;
+
+                        // 更平滑的口型变化
+                        const normalizedVolume = speechVolume / 255;
+                        const smoothMouthOpen = calculateSmoothMouthOpen(normalizedVolume);
+
+                        // 更精细的音素控制
+                        updateVRMExpressions(expressionManager, smoothMouthOpen);
+
+                        requestAnimationFrame(animate);
+                    }
+
+                    function calculateSmoothMouthOpen(volume) {
+                        const threshold = 0.1;
+                        const maxMouthOpen = 0.7;
+
+                        // 使用指数平滑
+                        if (volume > threshold) {
+                            return Math.min(Math.pow(volume, 0.5) * maxMouthOpen, maxMouthOpen);
+                        }
+                        return 0;
+                    }
+
+                    function updateVRMExpressions(expressionManager, mouthOpen) {
+                        // 更多音素映射
+                        expressionManager.setValue('aa', mouthOpen); // 开口音
+                        expressionManager.setValue('ih', 0); // 闭口音1 - mouthOpen
+                        expressionManager.setValue('ou', mouthOpen * 0.7); // 圆唇音
+                    }
+
+                    // 开始动画
+                    animate();
+                } catch (error) {
+                    console.error('音频处理失败:', error);
+                }
+            }
+
+            // 以下为爱心生成逻辑
+            let hearts = [];
+
+            // 爱心生成
+            function createHeartParticle() {
+                // 创建加载器
+                const textureLoader = new THREE.TextureLoader();
+
+                return new Promise((resolve, reject) => {
+                    // 加载爱心 PNG 图片
+                    textureLoader.load(
+                        '/assets/imgs/小心心.png',
+                        function (texture) {
+                            // 创建平面几何
+                            const geometry = new THREE.PlaneGeometry(1, 1); // 5x5 的平面
+                            // 创建材质
+                            const material = new THREE.MeshBasicMaterial({
+                                map: texture,
+                                transparent: true, // 使 PNG 中的透明部分生效
+                                side: THREE.DoubleSide // 使材质双面可见
+                            });
+                            // 创建网格
+                            const heart = new THREE.Mesh(geometry, material);
+
+                            // 缩放爱心大小
+                            heart.scale.set(0.1, 0.1, 0.1); // 调整缩放比例控制大小
+
+                            // 固定爱心位置到左上角
+                            heart.position.set(-1, 1.8, 0); // 设置左上角的坐标
+
+                            resolve(heart); // 加载完成后，返回 heart
+                        },
+                        undefined,
+                        function (error) {
+                            // 如果加载出错，则调用 reject
+                            reject(error);
+                        }
+                    );
+                });
+            }
+
+            //生成5个
+            async function startHeartGeneration(number = 1) {
+                console.log("生成小心心*" + number)
+                // Generate 1 hearts
+                for (let i = 0; i < number; i++) {
+                    const heart = await createHeartParticle();
+                    scene.add(heart);
+                    hearts.push(heart);
+                }
+            }
+
+            //移动爱心到vrm
+            function moveHeartsTowardsVRM_正常移动() {
+                if (!vrm) return;
+
+                hearts.forEach(heart => {
+                    // 获取头部骨骼的节点
+                    const headNode = vrm.humanoid?.getNormalizedBoneNode("head");
+                    if (!headNode) return;
+
+                    // 获取头部的世界坐标
+                    const headWorldPosition = new THREE.Vector3();
+                    headNode.getWorldPosition(headWorldPosition);
+
+                    // console.log(headWorldPosition)
+                    const direction = new THREE.Vector3()
+                        .subVectors(headWorldPosition, heart.position) //vrmPosition-heart.position
+                        .normalize()
+                        .multiplyScalar(0.02);//每次更新0.05个单位
+
+                    heart.position.add(direction);
+
+                    // 检测碰撞
+                    if (checkHeartVRMCollision(heart)) {
+                        triggerVRMReaction(heart);
+                    }
+                });
+            }
+
+            // 平滑移动
+            function moveHeartsTowardsVRM_平滑移动() {
+                if (!vrm) return;
+
+                hearts.forEach(heart => {
+                    const headNode = vrm.humanoid?.getNormalizedBoneNode("head");
+                    if (!headNode) return;
+
+                    const headWorldPosition = new THREE.Vector3();
+                    headNode.getWorldPosition(headWorldPosition);
+
+                    // 使用Lerp平滑移动
+                    heart.position.lerp(headWorldPosition, 0.02);
+
+                    // 检测碰撞
+                    if (checkHeartVRMCollision(heart)) {
+                        triggerVRMReaction(heart);
+                    }
+                });
+            }
+
+            // 优化 旋转和缩放
+            function moveHeartsTowardsVRM() {
+                if (!vrm) return;
+
+                hearts.forEach(heart => {
+                    const headNode = vrm.humanoid?.getNormalizedBoneNode("head");
+                    if (!headNode) return;
+
+                    const headWorldPosition = new THREE.Vector3();
+                    headNode.getWorldPosition(headWorldPosition);
+
+                    // 使用Lerp平滑移动
+                    heart.position.lerp(headWorldPosition, 0.02);
+
+                    // 添加旋转效果
+                    heart.rotation.z += 0.01;
+
+                    // // 添加缩放效果
+                    // const scale = Math.min(1, heart.position.distanceTo(headWorldPosition) * 0.1);
+                    // heart.scale.set(scale, scale, scale);
+
+                    // 检测碰撞
+                    if (checkHeartVRMCollision(heart)) {
+                        triggerVRMReaction(heart);
+                    }
+                });
+            }
+
+            //根据距离判断是否碰撞
+            function checkHeartVRMCollision(heart) {
+                if (!vrm) return false;
+                // 获取头部骨骼的节点
+                const headNode = vrm.humanoid?.getNormalizedBoneNode("head");
+                if (!headNode) return;
+
+                // 获取头部的世界坐标
+                const headWorldPosition = new THREE.Vector3();
+                headNode.getWorldPosition(headWorldPosition);
+
+                const distance = heart.position.distanceTo(headWorldPosition);
+                return distance < 0.1; // 根据需要调整阈值
+            }
+
+            //碰撞后的效果
+            function triggerVRMReaction(heart) {
+                if (!vrm) return;
+
+                // Remove heart from scene
+                scene.remove(heart);
+                hearts = hearts.filter(h => h !== heart);
+
+                //这里播放动画
+                console.log("播放礼物触发动画")
+                playVRMAAnimation(vrm, '/assets/models/捂嘴比心.vrma', 2);
+                // // 使用预设的表情
+                // const presetName = "angry"; // 或其他适合的预设表情
+                // if (vrm.expressionManager) {
+                //     console.log("存在预设表情")
+                //     // 设置表情权重
+                //     vrm.expressionManager.setValue(presetName, 1.0);
+                //
+                //     // 2秒后恢复正常表情
+                //     setTimeout(() => {
+                //         vrm.expressionManager.setValue(presetName, 0.0);
+                //     }, 2000);
+                // }
+                // 添加新的爱心 测试
+                // const newHeart = createHeartParticle();
+                // scene.add(newHeart);
+                // hearts.push(newHeart);
+            }
+
+
+            // animate
+            const clock = new THREE.Clock();
+            clock.start();
+            let animationFrameId;
+
+            function animate() {
+
+                animationFrameId = requestAnimationFrame(animate);
+
+                const deltaTime = clock.getDelta();
+
+                // 移动小爱心
+                moveHeartsTowardsVRM();
+
+                vrm.update(deltaTime);
+
+                if (currentMixer != null) {
+                    //console.log("新增的渲染动画")
+                    currentMixer.update(deltaTime);
+                } else {
+                    mixer.update(deltaTime);  //待机动画
+                    //眨眼动画 一下
+                    //prepareAnimation(vrm);
+
+                }
+
+                renderer.render(scene, camera);
+
+            }
+
+            animate();
+
+            // //调试时使用  添加轨道控制器
+            // const controls = new OrbitControls(camera, renderer.domElement);
+            // controls.enableDrag = true; // 允许拖拽
+            // controls.enableZoom = true; // 允许缩放
+            // camera.position.set(-0.4871705541787692, 2.4904776732322933, -13.126040932261448);
+            // const gridHelper = new THREE.GridHelper(10, 10); // 创建一个10x10的网格
+            // scene.add(gridHelper);
+            // // 创建 XZ 平面的网格
+            // const gridXZ = new THREE.GridHelper(10, 10);
+            // gridXZ.rotation.x = Math.PI / 2; // 旋转 90 度使网格垂直于 XY 平面
+            // scene.add(gridXZ);
+            //
+            // const axesHelper = new THREE.AxesHelper(5);
+            // scene.add(axesHelper);
+            // //监听change事件
+            // controls.addEventListener('change', () => {
+            //     console.log('相机位置：', camera.position);
+            // });
+
+
+            // setInterval(function () {
+            //     startHeartGeneration()
+            // }, 1 * 1000); // 10000 毫秒 = 10 秒
+
+            // 对话口型
+            window.ask = function ask(audioUrl) {
+                if (vrm && vrm.expressionManager) {
+                    simulateSpeechFromAudio(vrm.expressionManager, audioUrl);
+                } else {
+                    console.error('VRM or expressionManager not available');
+                }
+
+            }
+            // 对外公开动画播放
+            window.playVRMAAnimation = async function (vrmaUrl, timeScale = 1.0) {
+                await playVRMAAnimation(vrm, vrmaUrl, timeScale);
+            };
+
+            //触发礼物特效
+            window.gift_Effect = async function () {
+                startHeartGeneration()
+            };
+
+
+            // 待机动作-附加
+            setInterval(function () {
+                playVRMAAnimation(vrm, '/assets/models/待机动作2.vrma');
+            }, 100 * 1000); // 10000 毫秒 = 10 秒
+        }
+
+    )
+    ();
+</script>
+
+<script>
+    let websocketManager = {
+        socket: null,
+        mediaSource: null,
+        audio: null,
+        sourceBuffer: null,
+        queue: [],
+        isListening: false,
+        reconnectInterval: 1000,
+        maxReconnectInterval: 10000,
+        MAX_QUEUE_LENGTH: 10, //队列长度
+
+        // 初始化
+        init() {
+
+        },
+
+        // Start listening to WebSocket
+        start() {
+            if (this.isListening) return;
+
+            // Close float layer
+            document.getElementById('floatLayer').style.display = 'none';
+
+            this.init();
+            this.connect();
+            this.isListening = true;
+        },
+
+        // Establish WebSocket connection
+        connect() {
+            this.socket = new WebSocket('ws://localhost:8888/ws/audio');
+            this.socket.binaryType = "arraybuffer";
+
+            this.socket.onopen = () => {
+                console.log("WebSocket连接成功");
+                this.reconnectInterval = 1000; // Reset reconnect interval
+            };
+
+            this.socket.onmessage = (event) => {
+
+                const data = JSON.parse(event.data);
+                switch (data.type) {
+                    case 'init':
+                        console.log("WebSocket 响应成功！");
+                        break;
+                    case 'heart':
+                        // 有新的视频被加载
+                        console.log("心跳包", event.data);
+                        break;
+                    case 'audio':
+                        // 有新的视频被加载
+                        console.log("收到音频数据", event.data);
+                        this.loadAudio(data.data)
+                        break;
+                    case 'event':
+                        // 事件触发
+                        console.log("事件", event.data);
+                        this.loadEvent(data.data)
+                        break;
+                }
+                // this.queue.push(event.data);
+                // if (!this.sourceBuffer.updating) {
+                //     // 追加缓冲区
+                //     this.appendToBuffer();
+                //     // 口型匹配动画
+                //     ask(this.mediaSource, this.audio)
+                // }
+
+            };
+
+            this.socket.onclose = () => {
+                console.log("WebSocket连接关闭");
+                this.reconnect();
+            };
+
+            this.socket.onerror = (error) => {
+                console.error("WebSocket错误:", error);
+            };
+        },
+        loadEvent(type) {
+            switch (type) {
+                case '比心':
+                    //playVRMAAnimation('/assets/models/捂嘴比心.vrma');
+                    window.gift_Effect() //优化增加了触发动作
+                    //this.playAudio("/assets/audio/感谢老板送的小心心.mp3")
+                    break;
+                case '转个身':
+                    playVRMAAnimation('/assets/models/转身.vrma');
+                    break;
+                case '卖萌打招呼':
+                    playVRMAAnimation('/assets/models/卖萌打招呼.vrma');
+                    break;
+                case 'biubiu':
+                    playVRMAAnimation('/assets/models/开枪.vrma');
+                    break;
+                case '我来了':
+                    playVRMAAnimation('/assets/models/出现动作.vrma');
+                    break;
+                case '比耶':
+                    playVRMAAnimation('/assets/models/比耶.vrma');
+                    break;
+            }
+        },
+        playAudio(audioUrl) {
+            console.log("播放" + audioUrl)
+            // 口型 音频播放
+            ask(audioUrl)
+        }
+        ,
+        loadAudio(audioUrl) {
+            // 播放 有口型
+            console.log("加载：" + audioUrl)
+            // 口型 音频播放
+            ask(audioUrl)
+            // fetch(audioUrl)
+            //     .then(response => response.arrayBuffer())
+            //     .then(buffer => {
+            //         // 创建AudioContext
+            //         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            //
+            //         // 解码音频数据
+            //         audioCtx.decodeAudioData(buffer, (audioBuffer) => {
+            //             // 创建声源
+            //             const source = audioCtx.createBufferSource();
+            //             source.buffer = audioBuffer;
+            //
+            //             // 连接到扬声器
+            //             source.connect(audioCtx.destination);
+            //
+            //             // 播放音频
+            //             source.start();
+            //
+            //         }, (err) => {
+            //             console.error('解码音频数据失败', err);
+            //         });
+            //     })
+            //     .catch((err) => {
+            //         console.error('获取音频数据失败', err);
+            //     });
+        }
+        ,
+        // Reconnection logic
+        reconnect() {
+            console.log(`Attempting to reconnect, current interval: ${this.reconnectInterval}ms`);
+
+            setTimeout(() => {
+                try {
+                    // Close existing connection if open
+                    if (this.socket) {
+                        this.socket.close();
+                    }
+
+                    // Attempt to reconnect
+                    this.connect();
+
+                    // Reset or increase reconnect interval
+                    this.reconnectInterval = Math.min(
+                        this.reconnectInterval * 2,
+                        this.maxReconnectInterval
+                    );
+                } catch (error) {
+                    console.error("Reconnection failed:", error);
+                    this.reconnect();
+                }
+            }, this.reconnectInterval);
+        }
+    };
+
+    // Expose start method globally for button click
+    function start() {
+        //关闭浮层
+        websocketManager.start();
+    }
+
+    // 页面加载完成后显示浮层-->
+    window.onload = function () {
+        document.getElementById('floatLayer').style.display = 'flex';
+    };
+
+
+</script>
+</html>

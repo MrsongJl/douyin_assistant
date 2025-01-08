@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抖音弹幕工具</title>
+    <link href="../assets/css/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f0f2f5, #e0e7ff);
+            font-size: 14px;
+             overflow: hidden; /* 隐藏滚动条 */
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        #loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+            transition: opacity 0.3s ease-out;
+        }
+
+        #loading img {
+            width: 64px;
+            height: 64px;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body class="font-sans">
+<!-- 等待框 -->
+<!-- <div id="loading">
+    <img src="../assets/imgs/loading.svg" alt="Loading...">
+</div> -->
+
+<div class="container mx-auto px-4 py-8">
+    <header class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-blue-600 mb-4">抖音互动虚拟人</h1>
+        <p class="text-xl text-gray-600">你的专属虚拟伙伴，互动无界，乐趣无限！</p>
+    </header>
+
+    <main>
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- 左侧：OBS浏览器源 -->
+            <div class="card p-6">
+                <div class="bg-gradient-to-r from-blue-100 to-blue-200 p-4 rounded-lg">
+                    <h3 class="text-xl font-semibold text-blue-700 mb-2">OBS浏览器源</h3>
+                    <div class="flex">
+                        <input
+                            type="text"
+                            id="assistantLink"
+                            value="http://localhost:8888/html/webview.html"
+                            readonly
+                            class="w-full px-3 py-2 bg-blue-50 text-blue-800 rounded-l-lg border border-blue-300 focus:outline-none"
+                        >
+                        <button
+                            onclick="copyLink()"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 transition duration-300">
+                            复制
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：快速开始 -->
+            <div class="card p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-blue-500">快速开始</h2>
+                <form class="space-y-4">
+                    <input
+                        id="myText"
+                        type="text"
+                        placeholder="输入直播间链接"
+                        value="https://live.douyin.com/{your_room_id}"
+                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                    <button
+                        id="myButton"
+                        type="button"
+                        class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-300">
+                        开始
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center mt-12 text-gray-500">
+        © 2024 抖音互动虚拟人 | 抖音互动虚拟人
+    </footer>
+</div>
+
+<script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+<script>
+    // 链接代码
+    new QWebChannel(qt.webChannelTransport, function (channel) {
+        var bridge = channel.objects.bridge;
+
+        document.getElementById('myButton').onclick = function () {
+            // 传递JSON数据
+            var inputElement = document.getElementById('myText');
+            var inputValue = inputElement.value;
+            const tiktokLiveUrlPattern = /^https:\/\/live\.douyin\.com\/[0-9]+$/;
+
+            if (inputValue !== "" && tiktokLiveUrlPattern.test(inputValue)) {
+                console.log("输入的URL有效: " + inputValue);
+                var data = {
+                    inputValue: inputValue,
+                };
+                bridge.handle_button_click(JSON.stringify(data));
+            } else {
+                alert("输入的URL无效或为空。\n请确保输入的是有效的抖音直播链接\n格式为 {https://live.douyin.com/你的房间号}");
+            }
+        };
+    });
+
+    function copyLink() {
+        const linkInput = document.getElementById('assistantLink');
+        linkInput.select();
+        document.execCommand('copy');
+        alert('链接已复制！');
+    }
+</script>
+</body>
+</html>
