@@ -25,9 +25,13 @@
 1. 主页面
  ![主页面](https://raw.githubusercontent.com/MrsongJl/douyin_assistant/main/samples/主页面.png)
 2. 监听及互动页面
+ ![监听及互动页面](https://raw.githubusercontent.com/MrsongJl/douyin_assistant/main/samples/监听及互动页面.png)
 3. 功能主界面
+ ![功能主界面](https://raw.githubusercontent.com/MrsongJl/douyin_assistant/main/samples/功能主界面.png)
 4. 模型显示
+ ![模型显示](https://raw.githubusercontent.com/MrsongJl/douyin_assistant/main/samples/模型显示.png)
 5. 直播间效果
+ ![直播间效果](https://raw.githubusercontent.com/MrsongJl/douyin_assistant/main/samples/直播间效果.png)
 
 ## 源码使用
 
