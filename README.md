@@ -23,6 +23,7 @@
 ## 功能预览
 
 1. 主页面
+ ![主页面](https://raw.githubusercontent.com/MrsongJl/douyin_assistant/main/sampls/主页面.png)
 2. 监听及互动页面
 3. 功能主界面
 4. 模型显示
