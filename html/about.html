@@ -47,35 +47,22 @@
             margin: 0 auto 20px;
             line-height: 1.8;
         }
-        .team-member {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
+        .qr-code {
+            text-align: center;
             margin-top: 30px;
         }
-        .member {
-            background: #f4f4f4;
-            padding: 20px;
-            margin: 10px;
+        .qr-code img {
+            max-width: 200px;
+            height: auto;
+            border: 1px solid #e0e0e0;
             border-radius: 8px;
-            text-align: center;
-            width: calc(33.333% - 40px);
-            box-sizing: border-box;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            padding: 10px;
+            background: #fff;
         }
-        .member:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        .member h3 {
-            font-size: 1.5em;
+        .coffee-text {
+            font-size: 1.2em;
             color: #333;
-            margin: 10px 0;
-        }
-        .member p {
-            font-size: 1em;
-            color: #777;
-            margin: 0;
+            margin-top: 20px;
         }
         footer {
             text-align: center;
@@ -106,19 +93,9 @@
             我们致力于提供优质的学习资源，帮助开发者提升技能。本项目是一个开源项目，欢迎大家一起学习和贡献。
         </p>
 
-        <div class="team-member">
-            <div class="member">
-                <h3>张三</h3>
-                <p>前端开发工程师</p>
-            </div>
-            <div class="member">
-                <h3>李四</h3>
-                <p>后端开发工程师</p>
-            </div>
-            <div class="member">
-                <h3>王五</h3>
-                <p>UI设计师</p>
-            </div>
+        <div class="qr-code">
+            <img src="/assets/imgs/250cd36005b82dbfbb1974957e7733a.jpg" alt="二维码">
+            <p class="coffee-text">如果对你有帮助，请我喝个咖啡吧 ☕</p>
         </div>
     </div>
 </main>
