@@ -1,0 +1,8 @@
+/venv/
+/logs/
+/temp/
+/ui/__pycache__/
+/units/__pycache__/
+/webfetcher/__pycache__/
+/webfetcher/protobuf/__pycache__/
+

@@ -397,8 +397,8 @@ class ToolButton(QPushButton):
 
         elif self.id == 5:
             # 关于我们
-            self.new_window = ToolWindow(content_type='local_html', window_title='关于我们',
-                                         content_source='about.html')
+            self.new_window = ToolWindow(content_type='web', window_title='关于我们',
+                                         content_source='http://localhost:8888/html/about.html')
             self.new_window.show()
 
 

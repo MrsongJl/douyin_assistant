@@ -1,0 +1,59 @@
+{
+    "config_name": "全局配置",
+    "game_event": [
+        {
+            "name": "触发比心动作",
+            "trigger": {
+                "type": 1,
+                "text": "小心心"
+            },
+            "action": {
+                "type": 4,
+                "config": {
+                    "method": "post",
+                    "url": "http://localhost:8888/executeCommand",
+                    "payload": {
+                        "command": "event",
+                        "content": "比心"
+                    }
+                }
+            }
+        },
+        {
+            "name": "触发转身动作",
+            "trigger": {
+                "type": 1,
+                "text": "棒棒糖"
+            },
+            "action": {
+                "type": 4,
+                "config": {
+                    "method": "post",
+                    "url": "http://localhost:8888/executeCommand",
+                    "payload": {
+                        "command": "event",
+                        "content": "转个身"
+                    }
+                }
+            }
+        },
+        {
+            "name": "触发卖萌动作",
+            "trigger": {
+                "type": 1,
+                "text": "大啤酒"
+            },
+            "action": {
+                "type": 4,
+                "config": {
+                    "method": "post",
+                    "url": "http://localhost:8888/executeCommand",
+                    "payload": {
+                        "command": "event",
+                        "content": "卖萌打招呼"
+                    }
+                }
+            }
+        }
+    ]
+}

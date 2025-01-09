@@ -12,13 +12,6 @@ https://pixiv.github.io/three-vrm/packages/three-vrm/docs/
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <title>互动虚拟人</title>
-    <!--   外部引用 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <!--    <script src="https://unpkg.com/@pixiv/three-vrm@0.6.0/dist/three-vrm.umd.js"></script>-->
-    <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/BVHLoader.js"></script>
-    <!--    <script src="https://unpkg.com/@pixiv/three-vrm-animation/dist/three-vrm-animation.umd.js"></script>-->
 </head>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -91,15 +84,15 @@ https://pixiv.github.io/three-vrm/packages/three-vrm/docs/
 
 
 <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
-      "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js",
-      "@pixiv/three-vrm-animation": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm-animation",
-      "three/controls/OrbitControls": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/controls/OrbitControls.js"
-    }
-  }
+    {
+        "imports": {
+          "three": "https://fastly.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+          "three/addons/": "https://fastly.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+          "@pixiv/three-vrm": "https://fastly.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js",
+          "@pixiv/three-vrm-animation": "https://fastly.jsdelivr.net/npm/@pixiv/three-vrm-animation",
+          "three/controls/OrbitControls": "https://fastly.jsdelivr.net/npm/three@0.169.0/examples/jsm/controls/OrbitControls.js"
+        }
+      }
 
 
 
@@ -246,7 +239,7 @@ https://pixiv.github.io/three-vrm/packages/three-vrm/docs/
 
 
             // 加载模型
-            const gltfVrm = await loader.loadAsync('/assets/models/少女2.vrm');
+            const gltfVrm = await loader.loadAsync('/assets/models/少女.vrm');
             const vrm = gltfVrm.userData.vrm;
 
             // 重置模型的位置、旋转和缩放
@@ -266,19 +259,24 @@ https://pixiv.github.io/three-vrm/packages/three-vrm/docs/
             // 相机位置设置
             // y: 将高度设为模型高度的0.5,使视角集中在上半身
             // z: 减小z值来拉近镜头
+            //camera.position.set(
+            //    0.1,
+            //    modelHeight * 0.8,  // 降低相机高度到模型中上部
+            //    modelHeight * 0.8   // 减小距离以放大显示
+            //);
             camera.position.set(
-                0.1,
-                modelHeight * 0.8,  // 降低相机高度到模型中上部
-                modelHeight * 0.8   // 减小距离以放大显示
+                -0.015616979612349778,
+                1.334155516930854,  // 降低相机高度到模型中上部
+                0.7978784729499655   // 减小距离以放大显示
             );
 
             // 相机焦点
             // y: 将焦点抬高到胸部位置(约为总高度的0.7)
-            camera.lookAt(
-                0,
-                modelHeight * 0.7,  // 将焦点对准上半身部分
-                0
-            );
+            // camera.lookAt(
+            //     0,
+            //     modelHeight * 0.7,  // 将焦点对准上半身部分
+            //     0
+            // );
 
             //优化性能
             // VRMUtils.removeUnnecessaryVertices(vrm.scene);
@@ -699,7 +697,7 @@ https://pixiv.github.io/three-vrm/packages/three-vrm/docs/
 
             animate();
 
-            // //调试时使用  添加轨道控制器
+            //调试时使用  添加轨道控制器
             // const controls = new OrbitControls(camera, renderer.domElement);
             // controls.enableDrag = true; // 允许拖拽
             // controls.enableZoom = true; // 允许缩放
@@ -710,7 +708,7 @@ https://pixiv.github.io/three-vrm/packages/three-vrm/docs/
             // const gridXZ = new THREE.GridHelper(10, 10);
             // gridXZ.rotation.x = Math.PI / 2; // 旋转 90 度使网格垂直于 XY 平面
             // scene.add(gridXZ);
-            //
+            
             // const axesHelper = new THREE.AxesHelper(5);
             // scene.add(axesHelper);
             // //监听change事件

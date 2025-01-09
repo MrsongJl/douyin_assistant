@@ -39,6 +39,8 @@
 ![直播间效果](https://raw.githubusercontent.com/MrsongJl/douyin_assistant/main/samples/直播间效果.png)
 
 ## 🚀 源码使用
+###  ⚠️ 重要提示
+需要Window及Python 3.10.0 以上环境
 
 1. 安装虚拟环境
 ```bash
@@ -56,6 +58,9 @@ pip install -r requirements.txt
 ```
 
 4. 运行main.py
+```bash
+python main.py
+```
 
 ## 📖 软件使用
 
@@ -82,7 +87,7 @@ pip install -r requirements.txt
 
 ## 🙏 参考的开源项目
 
-* https://github.com/LyzenX/DouyinLiveRecorder
+* https://github.com/saermart/DouyinLiveWebFetcher
 * https://github.com/pixiv/three-vrm
 
 ## ☕ 如果对你有帮助，请我喝个咖啡吧
